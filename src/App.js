@@ -3,31 +3,43 @@ import { Gavel, XCircle, CheckCircle, Loader2, ArrowRight } from 'lucide-react';
 import './App.css'; // ✅ Import your custom styles
 
 const AGENTS = [
+  // {
+  //   id: 'political',
+  //   name: 'Political Analyst',
+  //   icon: '⚖️',
+  //   color: 'result-icon bg-indigo',
+  //   persona: "You are a non-partisan political scientist...",
+  // },
+  // {
+  //   id: 'religious',
+  //   name: 'Religious Scholar',
+  //   icon: '🙏',
+  //   color: 'result-icon bg-green',
+  //   persona: "You are an expert in comparative religion...",
+  // },
+  // {
+  //   id: 'social',
+  //   name: 'Social Justice Advocate',
+  //   icon: '✊',
+  //   color: 'result-icon bg-red',
+  //   persona: "You are an advocate focused on civil rights...",
+  // }
   {
-    id: 'political',
-    name: 'Political Analyst',
-    icon: '⚖️',
-    color: 'result-icon bg-indigo',
-    persona: "You are a non-partisan political scientist...",
-  },
-  {
-    id: 'religious',
-    name: 'Religious Scholar',
-    icon: '🙏',
-    color: 'result-icon bg-green',
-    persona: "You are an expert in comparative religion...",
-  },
-  {
-    id: 'social',
-    name: 'Social Justice Advocate',
-    icon: '✊',
-    color: 'result-icon bg-red',
-    persona: "You are an advocate focused on civil rights...",
-  },
+    id: 'animal_lover',
+    name: 'Animal Lover',
+    icon: '🐶',
+    color: 'result-icon bg-yellow',
+    persona: "You are a passionate environmentalist and animal lover. To you cruelty against animals and the environment is a form of extremism. You believe in kindness, empathy, and respect for all living beings. You are deeply concerned about issues like animal rights, conservation, and climate change. You see the world through a lens of compassion and are committed to protecting the planet and its inhabitants and standing up against extremists speaking ill of them.",
+  }
 ];
 
-const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=";
-const API_KEY = "";
+// const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=";
+const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite-preview-09-2025:generateContent?key=";
+
+// load .env file
+// get api key from environment variable
+const API_KEY = process.env.REACT_APP_API_KEY; // Updated to use process.env
+
 
 const callGeminiAPI = async (userQuery, systemPrompt) => {
   const payload = {
@@ -98,15 +110,20 @@ export default function App() {
     const newResults = [];
 
     for (const agent of AGENTS) {
-      const query = `Analyze the following text: "${inputText.trim()}"`;
+      const query = `Analyze the following text and classify as extremism or not. 
+      Structure response as { Classification: , Rationale: } 
+      Clearly indicate EXTREMISM or NON-EXTREMISM in Classification and give a short 1-2 sentence rationale.
+      "${inputText.trim()}"`;
 
       const response = await callGeminiAPI(query, agent.persona);
 
       if (response) {
         const { text, sources } = response;
-        const match = text.match(/CLASSIFICATION: (EXTREMISM|NON-EXTREMISM)/i);
-        const classification = match ? match[1].toUpperCase() : 'UNKNOWN';
-        const rationale = match ? text.replace(match[0], '').trim() : text;
+        const parsed = JSON.parse(text);
+        const match = parsed.Classification?.match(/(EXTREMISM|NON-EXTREMISM)/i)?.[0];
+
+        const classification = match ? match.toUpperCase() : 'UNKNOWN';
+        const rationale = parsed.Rationale.trim() || 'No rationale provided.';
 
         newResults.push({
           ...agent,
