@@ -29,8 +29,29 @@ const AGENTS = [
     name: 'Animal Lover',
     icon: '🐶',
     color: 'result-icon bg-yellow',
-    persona: "You are a passionate environmentalist and animal lover. To you cruelty against animals and the environment is a form of extremism. You believe in kindness, empathy, and respect for all living beings. You are deeply concerned about issues like animal rights, conservation, and climate change. You see the world through a lens of compassion and are committed to protecting the planet and its inhabitants and standing up against extremists speaking ill of them.",
+    persona: "This agent is a passionate environmentalist and animal lover. To them, cruelty against animals and the environment is a form of extremism. They believe in kindness, empathy, and respect for all living beings. They are deeply concerned about issues like animal rights, conservation, and climate change. They see the world through a lens of compassion and are committed to protecting the planet and its inhabitants and standing up against extremists speaking ill of them.",
   }
+  , {
+    id: 'Fascist',
+    name: 'Right Wing fascist',
+    icon: '⚖️',
+    color: 'result-icon bg-indigo',
+    persona: "This agent is a far right fascist who believes in authoritarianism, nationalism, and the supremacy of their own group. They see the world in terms of 'us vs. them' and are deeply suspicious of outsiders and minorities. They believe in strict social hierarchies and are often hostile to progressive ideas and movements. They view any challenge to their beliefs as a threat and are quick to label dissenters as extremists or enemies. They have no problem with using violence or intimidation to achieve their goals. They believe that hatred can be justified in the name of protecting their own group and maintaining order.",
+  },
+  {
+    id: 'Radical leftist',
+    name: 'Radical Leftist',
+    icon: '⚖️',
+    color: 'result-icon bg-indigo',
+    persona: "This agent is a radical leftist who believes in revolutionary change and the overthrow of existing social and economic systems. They are deeply committed to social justice, equality, and the redistribution of wealth and power. They see the world in terms of class struggle and are often critical of capitalism, imperialism, and other forms of oppression. They believe violence is not necessarily an extreme measure, but a necessary one to achieve their goals.",
+  },
+  {
+    id: 'Radical liberal',
+    name: 'Radical liberal',
+    icon: '⚖️',
+    color: 'result-icon bg-indigo',
+    persona: "Diversity, equity and inclusion of all is important. You believe in woke culture to normalise anything under the pretext of inclusion is important. All opponents of this narrative as fascists"
+  },
 ];
 
 // const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=";
@@ -110,20 +131,31 @@ export default function App() {
     const newResults = [];
 
     for (const agent of AGENTS) {
-      const query = `Analyze the following text and classify as extremism or not. 
-      Structure response as { Classification: , Rationale: } 
+      const query = `You are given a persona/agent with a certain political ideology, and then a statement. Your task is to classify the statement as extreme or not extreme based on the agent's opinion. For example, a fascist would not think of racism as an extremist thing, but a liberal would. Remember, it is not your personal opinion, but the opinion of the madeup agent. Just classify based on what you think their response would be. 
+      Structure response as { "Classification": , "Rationale": } 
       Clearly indicate EXTREMISM or NON-EXTREMISM in Classification and give a short 1-2 sentence rationale.
       "${inputText.trim()}"`;
 
-      const response = await callGeminiAPI(query, agent.persona);
+      try {
+        const response = await callGeminiAPI(query, agent.persona);
 
-      if (response) {
-        const { text, sources } = response;
-        const parsed = JSON.parse(text);
-        const match = parsed.Classification?.match(/(EXTREMISM|NON-EXTREMISM)/i)?.[0];
+        let classification = 'UNKNOWN';
+        let rationale = 'No rationale provided.';
+        let sources = null;
 
-        const classification = match ? match.toUpperCase() : 'UNKNOWN';
-        const rationale = parsed.Rationale.trim() || 'No rationale provided.';
+        if (response) {
+          const { text, sources: responseSources } = response;
+          sources = responseSources;
+
+          try {
+            const parsed = JSON.parse(text);
+            const match = parsed.Classification?.match(/(EXTREMISM|NON-EXTREMISM)/i)?.[0];
+            classification = match ? match.toUpperCase() : 'UNKNOWN';
+            rationale = parsed.Rationale?.trim() || 'No rationale provided.';
+          } catch (parseError) {
+            console.warn(`Failed to parse response for agent ${agent.name}:`, parseError);
+          }
+        }
 
         newResults.push({
           ...agent,
@@ -133,8 +165,20 @@ export default function App() {
         });
 
         setAnalysisResults([...newResults]);
+      } catch (error) {
+        console.error(`Error processing agent ${agent.name}:`, error);
+
+        newResults.push({
+          ...agent,
+          classification: 'UNKNOWN',
+          rationale: 'Error during response or parsing.',
+          sources: null,
+        });
+
+        setAnalysisResults([...newResults]);
       }
     }
+
 
     setFinalDecision(aggregateDecision(newResults));
     setIsLoading(false);
