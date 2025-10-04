@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Gavel, XCircle, CheckCircle, Loader2, ArrowRight } from 'lucide-react';
-import './App.css'; // ✅ Import your custom styles
+import './App.css';
 import AgentManager from './AgentManager';
 import FileUpload from './FileUpload';
 
@@ -10,7 +10,7 @@ const AGENTS = [
   {
     id: '1',
     extremismRating: 0,
-    name: 'Liberal Analyst', 
+    name: 'Liberal Analyst',
     icon: '🟦',
     color: 'result-icon bg-blue',
     persona: 'This agent is a liberal political analyst who believes in equality, social justice, and progressive values. They view extremist views as harmful to society and are vigilant against hate speech and discrimination.',
@@ -18,7 +18,7 @@ const AGENTS = [
   {
     id: '2',
     extremismRating: 60,
-    name: 'Radical Right Winger', 
+    name: 'Radical Right Winger',
     icon: '🟦',
     color: 'result-icon bg-red',
     persona: 'This agent is a radical right-wing person who believes in strong nationalistic values, limited government intervention, and traditional social norms. They may view certain extremist views as acceptable or even necessary for preserving their vision of society.',
@@ -26,7 +26,7 @@ const AGENTS = [
   {
     id: '3',
     extremismRating: 30,
-    name: 'Femininist Scholar', 
+    name: 'Femininist Scholar',
     icon: '🟦',
     color: 'result-icon bg-green',
     persona: 'This agent is a feminist scholar who advocates for gender equality, women\'s rights, and social reform. They are particularly sensitive to issues of sexism and misogyny. Their views may be classified as extremist by more conservative standards.',
@@ -34,25 +34,39 @@ const AGENTS = [
   {
     id: '4',
     extremismRating: 10,
-    name: 'Friendly Grandpa', 
+    name: 'Friendly Grandpa',
     icon: '🟦',
     color: 'result-icon bg-green',
     persona: 'This agent is a friendly grandpa who values kindness, community, and traditional family values. They may have conservative views but are generally open-minded and compassionate. They tend to avoid extreme positions and seek common ground.',
   },
+];
+
+const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite-preview-09-2025:generateContent?key=";
+const API_KEY = process.env.REACT_APP_API_KEY;
+
+const callGeminiAPI = async (inputText, agents) => {
+  const systemPrompt = `
+You are an AI system simulating a multi-agent jury. Each agent has a defined persona. Analyze the input statement from the perspective of each agent. For each agent, classify the statement as EXTREMISM or NON-EXTREMISM based on what that persona would think, not your own opinion.
+
+Return an array of JSON objects, one for each agent, in this format:
+[
+  {
+    "id": "agent-id",
+    "Classification": "EXTREMISM" or "NON-EXTREMISM",
+    "Rationale": "Short explanation"
+  },
+  ...
 ]
 
-// const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=";
-const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite-preview-09-2025:generateContent?key=";
+Agents:
+${agents.map(agent => `ID: ${agent.id}\nName: ${agent.name}\nPersona: ${agent.persona}`).join('\n\n')}
 
-// load .env file
-// get api key from environment variable
-const API_KEY = process.env.REACT_APP_API_KEY; // Updated to use process.env
+Statement:
+"${inputText}"
+  `.trim();
 
-
-const callGeminiAPI = async (userQuery, systemPrompt) => {
   const payload = {
-    contents: [{ parts: [{ text: userQuery }] }],
-    tools: [{ google_search: {} }],
+    contents: [{ parts: [{ text: "Analyze the above and return structured JSON." }] }],
     systemInstruction: { parts: [{ text: systemPrompt }] },
   };
 
@@ -63,29 +77,13 @@ const callGeminiAPI = async (userQuery, systemPrompt) => {
       body: JSON.stringify(payload),
     });
 
-    if (!response.ok) {
-      throw new Error("API Error");
-    }
+    if (!response.ok) throw new Error("API Error");
 
     const result = await response.json();
     const candidate = result.candidates?.[0];
+    const text = candidate?.content?.parts?.[0]?.text;
 
-    if (candidate?.content?.parts?.[0]?.text) {
-      const text = candidate.content.parts[0].text;
-      let sources = [];
-
-      const groundingMetadata = candidate.groundingMetadata;
-      if (groundingMetadata?.groundingAttributions) {
-        sources = groundingMetadata.groundingAttributions.map(attr => ({
-          uri: attr.web?.uri,
-          title: attr.web?.title,
-        })).filter(src => src.uri && src.title);
-      }
-
-      return { text, sources };
-    }
-
-    return null;
+    return text || null;
   } catch (e) {
     console.error(e);
     return null;
@@ -106,18 +104,15 @@ export default function App() {
 
   const aggregateDecision = useCallback((results) => {
     const totalScore = results.length * 100;
-    // If the total extremism score is more than half, classify as EXTREMISM, else NON-EXTREMISM
-    // If they classify as EXTREMISM, count as 100 - extremismScore) otherwise 0
     const score = results.reduce((sum, r) => {
       if (r.classification === 'EXTREMISM') {
         return sum + (100 - r.extremismRating);
       } else if (r.classification === 'NON-EXTREMISM') {
         return sum;
       }
-    }, 0)
+      return sum;
+    }, 0);
     return score > totalScore / 2 ? 'EXTREMISM' : 'NON-EXTREMISM';
-    // const extremismVotes = results.filter(r => r.classification === 'EXTREMISM').length;
-    // return extremismVotes > results.length / 2 ? 'EXTREMISM' : 'NON-EXTREMISM';
   }, []);
 
   const analyzeText = useCallback(async () => {
@@ -131,61 +126,52 @@ export default function App() {
     setAnalysisResults([]);
     setFinalDecision(null);
 
-    const newResults = [];
+    try {
+      const responseText = await callGeminiAPI(inputText.trim(), agents);
 
-    for (const agent of agents) {
-      const query = `You are given a persona/agent with a certain political ideology, and then a statement. Your task is to classify the statement as extreme or not extreme based on the agent's opinion. For example, a fascist would not think of racism as an extremist thing, but a liberal would. Remember, it is not your personal opinion, but the opinion of the madeup agent. Just classify based on what you think their response would be. 
-      Structure response as { "Classification": , "Rationale": } 
-      Clearly indicate EXTREMISM or NON-EXTREMISM in Classification and give a short 1-2 sentence rationale.
-      "${inputText.trim()}"`;
-
+      let parsedResults = [];
       try {
-        const response = await callGeminiAPI(query, agent.persona);
-
-        let classification = 'UNKNOWN';
-        let rationale = 'No rationale provided.';
-        let sources = null;
-
-        if (response) {
-          const { text, sources: responseSources } = response;
-          sources = responseSources;
-
-          try {
-            const parsed = JSON.parse(text);
-            const match = parsed.Classification?.match(/(EXTREMISM|NON-EXTREMISM)/i)?.[0];
-            classification = match ? match.toUpperCase() : 'UNKNOWN';
-            rationale = parsed.Rationale?.trim() || 'No rationale provided.';
-          } catch (parseError) {
-            console.warn(`Failed to parse response for agent ${agent.name}:`, parseError);
-          }
-        }
-
-        newResults.push({
-          ...agent,
-          classification,
-          rationale,
-          sources,
-        });
-
-        setAnalysisResults([...newResults]);
-      } catch (error) {
-        console.error(`Error processing agent ${agent.name}:`, error);
-
-        newResults.push({
-          ...agent,
-          classification: 'UNKNOWN',
-          rationale: 'Error during response or parsing.',
-          sources: null,
-        });
-
-        setAnalysisResults([...newResults]);
+        parsedResults = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error("Failed to parse API response:", parseError);
+        setError("Failed to parse the response from the model.");
+        setIsLoading(false);
+        return;
       }
+
+      const enrichedResults = agents.map(agent => {
+        const agentResult = parsedResults.find(res => res.id === agent.id);
+
+        if (agentResult) {
+          const match = agentResult.Classification?.match(/(EXTREMISM|NON-EXTREMISM)/i)?.[0];
+          const classification = match ? match.toUpperCase() : 'UNKNOWN';
+          const rationale = agentResult.Rationale?.trim() || 'No rationale provided.';
+
+          return {
+            ...agent,
+            classification,
+            rationale,
+            sources: null,
+          };
+        } else {
+          return {
+            ...agent,
+            classification: 'UNKNOWN',
+            rationale: 'No response received for this agent.',
+            sources: null,
+          };
+        }
+      });
+
+      setAnalysisResults(enrichedResults);
+      setFinalDecision(aggregateDecision(enrichedResults));
+    } catch (err) {
+      console.error(err);
+      setError("Something went wrong during analysis.");
+    } finally {
+      setIsLoading(false);
     }
-
-
-    setFinalDecision(aggregateDecision(newResults));
-    setIsLoading(false);
-  }, [inputText, aggregateDecision]);
+  }, [inputText, agents, aggregateDecision]);
 
   const getBadgeClass = (classification) => {
     if (classification === 'EXTREMISM') return 'badge extremism';
