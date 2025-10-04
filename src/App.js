@@ -1,58 +1,42 @@
 import React, { useState, useCallback } from 'react';
 import { Gavel, XCircle, CheckCircle, Loader2, ArrowRight } from 'lucide-react';
 import './App.css'; // ✅ Import your custom styles
+import AgentManager from './AgentManager';
 
 const AGENTS = [
-  // {
-  //   id: 'political',
-  //   name: 'Political Analyst',
-  //   icon: '⚖️',
-  //   color: 'result-icon bg-indigo',
-  //   persona: "You are a non-partisan political scientist...",
-  // },
-  // {
-  //   id: 'religious',
-  //   name: 'Religious Scholar',
-  //   icon: '🙏',
-  //   color: 'result-icon bg-green',
-  //   persona: "You are an expert in comparative religion...",
-  // },
-  // {
-  //   id: 'social',
-  //   name: 'Social Justice Advocate',
-  //   icon: '✊',
-  //   color: 'result-icon bg-red',
-  //   persona: "You are an advocate focused on civil rights...",
-  // }
   {
-    id: 'animal_lover',
-    name: 'Animal Lover',
-    icon: '🐶',
-    color: 'result-icon bg-yellow',
-    persona: "This agent is a passionate environmentalist and animal lover. To them, cruelty against animals and the environment is a form of extremism. They believe in kindness, empathy, and respect for all living beings. They are deeply concerned about issues like animal rights, conservation, and climate change. They see the world through a lens of compassion and are committed to protecting the planet and its inhabitants and standing up against extremists speaking ill of them.",
-  }
-  , {
-    id: 'Fascist',
-    name: 'Right Wing fascist',
-    icon: '⚖️',
-    color: 'result-icon bg-indigo',
-    persona: "This agent is a far right fascist who believes in authoritarianism, nationalism, and the supremacy of their own group. They see the world in terms of 'us vs. them' and are deeply suspicious of outsiders and minorities. They believe in strict social hierarchies and are often hostile to progressive ideas and movements. They view any challenge to their beliefs as a threat and are quick to label dissenters as extremists or enemies. They have no problem with using violence or intimidation to achieve their goals. They believe that hatred can be justified in the name of protecting their own group and maintaining order.",
+    id: '1',
+    extremismRating: 0,
+    name: 'Liberal Analyst', 
+    icon: '🟦',
+    color: 'result-icon bg-blue',
+    persona: 'This agent is a liberal political analyst who believes in equality, social justice, and progressive values. They view extremist views as harmful to society and are vigilant against hate speech and discrimination.',
   },
   {
-    id: 'Radical leftist',
-    name: 'Radical Leftist',
-    icon: '⚖️',
-    color: 'result-icon bg-indigo',
-    persona: "This agent is a radical leftist who believes in revolutionary change and the overthrow of existing social and economic systems. They are deeply committed to social justice, equality, and the redistribution of wealth and power. They see the world in terms of class struggle and are often critical of capitalism, imperialism, and other forms of oppression. They believe violence is not necessarily an extreme measure, but a necessary one to achieve their goals.",
+    id: '2',
+    extremismRating: 60,
+    name: 'Radical Right Winger', 
+    icon: '🟦',
+    color: 'result-icon bg-red',
+    persona: 'This agent is a radical right-wing person who believes in strong nationalistic values, limited government intervention, and traditional social norms. They may view certain extremist views as acceptable or even necessary for preserving their vision of society.',
   },
   {
-    id: 'Radical liberal',
-    name: 'Radical liberal',
-    icon: '⚖️',
-    color: 'result-icon bg-indigo',
-    persona: "Diversity, equity and inclusion of all is important. You believe in woke culture to normalise anything under the pretext of inclusion is important. All opponents of this narrative as fascists"
+    id: '3',
+    extremismRating: 30,
+    name: 'Femininist Scholar', 
+    icon: '🟦',
+    color: 'result-icon bg-green',
+    persona: 'This agent is a feminist scholar who advocates for gender equality, women\'s rights, and social reform. They are particularly sensitive to issues of sexism and misogyny. Their views may be classified as extremist by more conservative standards.',
   },
-];
+  {
+    id: '4',
+    extremismRating: 10,
+    name: 'Friendly Grandpa', 
+    icon: '🟦',
+    color: 'result-icon bg-green',
+    persona: 'This agent is a friendly grandpa who values kindness, community, and traditional family values. They may have conservative views but are generally open-minded and compassionate. They tend to avoid extreme positions and seek common ground.',
+  },
+]
 
 // const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=";
 const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite-preview-09-2025:generateContent?key=";
@@ -111,10 +95,26 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [finalDecision, setFinalDecision] = useState(null);
   const [error, setError] = useState(null);
+  const [agents, setAgents] = useState(AGENTS);
+
+  const handleAddAgent = (agent) => {
+    setAgents((prev) => [...prev, agent]);
+  };
 
   const aggregateDecision = useCallback((results) => {
-    const extremismVotes = results.filter(r => r.classification === 'EXTREMISM').length;
-    return extremismVotes > results.length / 2 ? 'EXTREMISM' : 'NON-EXTREMISM';
+    const totalScore = results.length * 100;
+    // If the total extremism score is more than half, classify as EXTREMISM, else NON-EXTREMISM
+    // If they classify as EXTREMISM, count as 100 - extremismScore) otherwise 0
+    const score = results.reduce((sum, r) => {
+      if (r.classification === 'EXTREMISM') {
+        return sum + (100 - r.extremismRating);
+      } else if (r.classification === 'NON-EXTREMISM') {
+        return sum;
+      }
+    }, 0)
+    return score > totalScore / 2 ? 'EXTREMISM' : 'NON-EXTREMISM';
+    // const extremismVotes = results.filter(r => r.classification === 'EXTREMISM').length;
+    // return extremismVotes > results.length / 2 ? 'EXTREMISM' : 'NON-EXTREMISM';
   }, []);
 
   const analyzeText = useCallback(async () => {
@@ -130,7 +130,7 @@ export default function App() {
 
     const newResults = [];
 
-    for (const agent of AGENTS) {
+    for (const agent of agents) {
       const query = `You are given a persona/agent with a certain political ideology, and then a statement. Your task is to classify the statement as extreme or not extreme based on the agent's opinion. For example, a fascist would not think of racism as an extremist thing, but a liberal would. Remember, it is not your personal opinion, but the opinion of the madeup agent. Just classify based on what you think their response would be. 
       Structure response as { "Classification": , "Rationale": } 
       Clearly indicate EXTREMISM or NON-EXTREMISM in Classification and give a short 1-2 sentence rationale.
@@ -208,7 +208,7 @@ export default function App() {
         <h1 className="title">Multi-Agent Jury System</h1>
         <p className="subtitle">Distributed analysis of text content from diverse viewpoints.</p>
       </header>
-
+      <AgentManager onAddAgent={handleAddAgent} />
       <main>
         <div className="panel">
           <label htmlFor="inputText" className="subtitle" style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
@@ -244,7 +244,7 @@ export default function App() {
               {getIcon(finalDecision)}
               {finalDecision}
             </div>
-            <p className="subtitle">Based on majority vote from {AGENTS.length} agents.</p>
+            <p className="subtitle">Based on majority vote from {agents.length} agents.</p>
           </div>
         )}
 
