@@ -1,38 +1,197 @@
-.App {
-  text-align: center;
+/* styles.css */
+
+/* Font: Inter */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+
+:root {
+  --bg-dark: #111827;
+  --bg-panel: #1f2937;
+  --bg-panel-light: #374151;
+  --text-main: #e5e7eb;
+  --text-muted: #9ca3af;
+  --primary-gradient: linear-gradient(to right, #ec4899, #6366f1);
+  --danger: #ef4444;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --accent: #6366f1;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  line-height: 1.6;
+  padding: 1rem;
   min-height: 100vh;
+}
+
+/* Utility classes */
+
+.container {
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.title {
+  font-size: 2.5rem;
+  font-weight: 900;
+  background: var(--primary-gradient);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  font-size: 1.125rem;
+}
+
+.panel {
+  background-color: var(--bg-panel);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
+}
+
+.textarea {
+  width: 100%;
+  background-color: var(--bg-panel-light);
+  border: 1px solid #4b5563;
+  padding: 1rem;
+  color: var(--text-main);
+  border-radius: 0.75rem;
+  resize: none;
+  font-size: 1rem;
+  transition: border 0.3s ease;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.button {
+  margin-top: 1rem;
+  background-image: var(--primary-gradient);
+  border: none;
+  color: white;
+  font-weight: bold;
+  padding: 0.75rem 2rem;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  font-size: 1.125rem;
+  transition: box-shadow 0.3s ease;
+}
+
+.button:hover {
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.5);
+}
+
+.result-card {
+  background-color: var(--bg-panel-light);
+  border: 1px solid #4b5563;
+  border-radius: 1rem;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.result-header {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.result-icon {
+  font-size: 1.5rem;
+  padding: 0.5rem;
+  border-radius: 9999px;
   color: white;
 }
 
-.App-link {
-  color: #61dafb;
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: bold;
+  color: white;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.badge.extremism {
+  background-color: var(--danger);
+}
+
+.badge.non-extremism {
+  background-color: var(--success);
+}
+
+.badge.unknown {
+  background-color: var(--warning);
+}
+
+.sources {
+  margin-top: 1rem;
+  border-top: 1px solid #4b5563;
+  padding-top: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.sources a {
+  color: var(--text-muted);
+  text-decoration: none;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.sources a:hover {
+  color: var(--accent);
+}
+
+/* Final Verdict */
+.verdict {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.verdict-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem 2rem;
+  border-radius: 1rem;
+  font-size: 1.5rem;
+  font-weight: 900;
+  margin-bottom: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.verdict.extremism {
+  background-color: var(--danger);
+  color: white;
+  box-shadow: 0 0 30px rgba(239, 68, 68, 0.4);
+}
+
+.verdict.non-extremism {
+  background-color: var(--success);
+  color: white;
+  box-shadow: 0 0 30px rgba(16, 185, 129, 0.4);
+}
+
+.verdict.unknown {
+  background-color: #4b5563;
+  color: white;
 }
