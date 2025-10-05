@@ -27,7 +27,6 @@ export default function FileUpload({ apiUrl, apiKey, onUploadSuccess }) {
       const response = await fetch(apiUrl, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${apiKey}`,
         },
         body: formData,
       });
