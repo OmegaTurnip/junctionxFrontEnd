@@ -2,9 +2,9 @@ import React, { useState, useCallback } from 'react';
 import { Gavel, XCircle, CheckCircle, Loader2, ArrowRight } from 'lucide-react';
 import './App.css'; // ✅ Import your custom styles
 import AgentManager from './AgentManager';
-import FileUpload from './FileUpload';
+import AudioTranscription from './AudioTranscription';
 
-const URL = process.env.URL || "http://localhost:8000/api";
+// const URL = process.env.URL || "http://localhost:8000/";
 
 const AGENTS = [
   {
@@ -212,11 +212,12 @@ export default function App() {
         <p className="subtitle">Distributed analysis of text content from diverse viewpoints.</p>
       </header>
       <AgentManager onAddAgent={handleAddAgent} />
-      <FileUpload
-        apiUrl= {`${URL}/transcript`}
+      {/* <FileUpload
+        apiUrl= {`${URL}/audio/transcribe`}
         apiKey={""}
-        onUploadSuccess={(data) => console.log("File processed:", data)}
-      />
+        onUploadSuccess={(data) => displayClassification(data)}
+      /> */}
+      <AudioTranscription />
       <main>
         <div className="panel">
           <label htmlFor="inputText" className="subtitle" style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
