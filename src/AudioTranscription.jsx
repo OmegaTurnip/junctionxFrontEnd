@@ -4,8 +4,7 @@ import "./App.css";
 
 const URL = process.env.REACT_APP_URL;
 
-export default function AudioTranscription(props) {
-  const { classification, setClassification } = props;
+export default function AudioTranscription({classification, setClassification}) {
   const displayClassification = (data) => {
     // data looks like: { segments: [...], language: "en" }
     setClassification(data);

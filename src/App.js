@@ -21,7 +21,7 @@ const AGENTS = [
     name: 'Radical Right Winger',
     icon: '🟦',
     color: 'result-icon bg-red',
-    persona: 'This agent is a radical right-wing person who believes in strong nationalistic values, limited government intervention, and traditional social norms. They may view certain extremist views as acceptable or even necessary for preserving their vision of society.',
+    persona: 'This agent is a radical right-wing person who believes in strong nationalistic values, limited government intervention, and traditional social norms. They may view certain extremist views as acceptable or even necessary for preserving their vision of society. They are anti-immigration and seek to preserve cultural purity.',
   },
   {
     id: '3',
@@ -209,7 +209,7 @@ export default function App() {
         apiKey={""}
         onUploadSuccess={(data) => displayClassification(data)}
       /> */}
-      <AudioTranscription props={{ classification: classification, setClassification: setClassification }} />
+      <AudioTranscription classification = {classification} setClassification = {setClassification} />
       <main>
         <div className="panel">
           <label htmlFor="inputText" className="subtitle" style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
