@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Gavel, XCircle, CheckCircle, Loader2, ArrowRight } from 'lucide-react';
 import './App.css';
 import AgentManager from './AgentManager';
@@ -97,6 +97,12 @@ export default function App() {
   const [finalDecision, setFinalDecision] = useState(null);
   const [error, setError] = useState(null);
   const [agents, setAgents] = useState(AGENTS);
+
+  const [classification, setClassification] = useState(null);
+
+  useEffect(() => {
+    setInputText(classification ? classification.segments.map(seg => seg.text).join(' ') : '');
+  }, [classification]);
 
   const handleAddAgent = (agent) => {
     setAgents((prev) => [...prev, agent]);
@@ -203,7 +209,7 @@ export default function App() {
         apiKey={""}
         onUploadSuccess={(data) => displayClassification(data)}
       /> */}
-      <AudioTranscription />
+      <AudioTranscription props={{ classification: classification, setClassification: setClassification }} />
       <main>
         <div className="panel">
           <label htmlFor="inputText" className="subtitle" style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
